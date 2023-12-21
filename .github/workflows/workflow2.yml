@@ -1,8 +1,8 @@
-name: Workflow 2
+name: Workflow-2
 
 on:
   workflow_run:
-    workflows: ["workflow1.yml"]
+    workflows: ["Workflow-1"]
  
 
 jobs:
