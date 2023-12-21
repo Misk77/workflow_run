@@ -36,6 +36,9 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Wait for status update
+        run: sleep 30  # Adjust the duration as needed
+
       - name: Triggered by Workflow completion
         run: echo "Workflow-2 triggered by $workflow_name completion"
 
