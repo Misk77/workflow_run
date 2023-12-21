@@ -18,16 +18,15 @@ jobs:
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
             "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}")
 
-          # Extract the triggering workflow name and conclusion status
+          # Extract the triggering workflow name
           workflow_name=$(echo "$workflow_info" | jq -r '.workflow.name')
-          conclusion=$(echo "$workflow_info" | jq -r '.conclusion')
 
-          # Check if the triggering workflow was successful
-          if [ "$conclusion" == "success" ]; then
-            echo "$workflow_name was successful. Continuing with Workflow-2."
-          else
-            echo "$workflow_name did not succeed. Skipping Workflow-2."
+          # Check if any job in the triggering workflow failed
+          if echo "$workflow_info" | jq -e '.jobs[] | select(.conclusion == "failure")' > /dev/null; then
+            echo "$workflow_name had failed jobs. Skipping Workflow-2."
             exit 78  # exit with a neutral status
+          else
+            echo "$workflow_name was successful. Continuing with Workflow-2."
           fi
 
   job2:
