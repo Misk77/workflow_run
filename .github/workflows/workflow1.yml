@@ -2,17 +2,17 @@ name: Workflow-1
 
 on:
   pull_request:
-  push:
     branches:
       - master
-
 jobs:
   job1:
     runs-on: ubuntu-latest
 
     steps:
       - name: Step 1
-        run: echo "Running step 1 in Workflow 1"
+        run: | 
+          echo "Running step 1 in Workflow 1"
+          exit 1
 
       # Add more steps as needed
 
@@ -21,6 +21,9 @@ jobs:
 
     steps:
       - name: Step 2
-        run: echo "Running step 2 in Workflow 1"
+        run: | 
+          echo "Running step 2 in Workflow 1"
+
 
       # Add more steps as needed
+      
