@@ -5,35 +5,31 @@ on:
     workflows: ["Workflow-1"]
     types:
       - completed
- 
 
 jobs:
-  job1:
+  check-workflow:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check individual workflow statuses
+      - name: Check individual job statuses
         run: |
-          for workflow in workflow_runs {
-            if (workflow.conclusion != 'success') {
-              exit 1
-            }
-          }
+          workflow_run_id="${{ github.event.workflow_run.id }}"
+          repo="${{ github.repository }}"
+          jobs=$(curl -s -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/$repo/actions/runs/$workflow_run_id/jobs")
 
-      - name: need to get the branch
+          # Check each job's conclusion
+          for job in $(echo "$jobs" | jq -r '.jobs[] | .conclusion'); do
+            if [ "$job" != "success" ]; then
+              echo "Workflow-1 job did not succeed. Skipping Workflow-2."
+              exit 78  # exit with a neutral status
+            fi
+          done
+
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          ref: ${{github.event.workflow_run.head_branch}}
 
-      - name: Triggered by Workflow 1 completion
-        run: echo "Workflow 2 triggered by Workflow 1 completion"
-     
+      - name: Triggered by Workflow-1 completion
+        run: echo "Workflow-2 triggered by Workflow-1 completion"
+
       # Add more steps as needed
-      - name: Check if Workflow-1 was successful
-        run: |
-          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
-            echo "Workflow-2 triggered by Workflow-1 completion"
-          else
-            echo "Workflow-1 did not succeed. Skipping Workflow-2."
-            exit 78  # exit with a neutral status
-          fi
