@@ -1,31 +1,43 @@
 name: Workflow-2
 
 on:
-  workflow_run:
-    workflows: ["Workflow-1"]
-    types:
-      - completed
- 
+  pull_request:
+    branches:
+      - master
 
 jobs:
-  job1:
+  check-workflow:
     runs-on: ubuntu-latest
 
     steps:
-      - name: need to get the branch
-        uses: actions/checkout@v4
-        with:
-          ref: ${{github.event.workflow_run.head_branch}}
-
-      - name: Triggered by Workflow 1 completion
-        run: echo "Workflow 2 triggered by Workflow 1 completion"
-
-      # Add more steps as needed
-      - name: Check if Workflow-1 was successful
+      - name: Check Workflow status
+        id: check_workflow
         run: |
-          if [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
-            echo "Workflow-2 triggered by Workflow-1 completion"
+          # Fetch the triggering workflow information
+          workflow_info=$(curl -s -X GET \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+            "https://api.github.com/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}")
+
+          # Extract the triggering workflow name and conclusion status
+          workflow_name=$(echo "$workflow_info" | jq -r '.workflow.name')
+          conclusion=$(echo "$workflow_info" | jq -r '.conclusion')
+
+          # Check if the triggering workflow was successful
+          if [ "$conclusion" == "success" ]; then
+            echo "$workflow_name was successful. Continuing with Workflow-2."
           else
-            echo "Workflow-1 did not succeed. Skipping Workflow-2."
+            echo "$workflow_name did not succeed. Skipping Workflow-2."
             exit 78  # exit with a neutral status
           fi
+
+  job2:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Triggered by Workflow completion
+        run: echo "Workflow-2 triggered by $workflow_name completion"
+
+      # Add more steps as needed
